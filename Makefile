@@ -4,4 +4,7 @@ main:
 	gcc main.c
 
 clean:
-	rm *~ a.out
+	rm -f *~ a.out
+
+diff:	clean
+	git difftool HEAD
