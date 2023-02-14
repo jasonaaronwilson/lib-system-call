@@ -93,12 +93,21 @@ void show_current_working_directory() {
   show_c_string(buffer);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv, char **envp) {
   long result = 0;
 
   for (int i = 0; i < argc; i++) {
     show_number(i);
     show_c_string(argv[i]);
+  }
+
+  for (int i = 0; 1; i++) {
+    char* var = envp[i];
+    if (var == 0) {
+      break;
+    }
+    show_number(i);
+    show_c_string(var);
   }
 
   // Test our long to string
@@ -118,10 +127,20 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+void c_underscore_start(long int *stk_ptr) {
+  long int argc = *stk_ptr;
+  char **argv = (char **) &stk_ptr[1];
+  char **envp = (char **) &stk_ptr[2+argc];
+  main(argc, argv, envp);
+  syscall(SYS_exit, 1);
+}
+
+/*
 // Tell the compiler incoming stack alignment is not RSP%16==8 or ESP%16==12
 __attribute__((force_align_arg_pointer))
 void _start() {
   main(0, 0);
     __builtin_unreachable();  // tell the compiler to make sure side effects are done before the asm statement
 }
+*/
 
