@@ -1,9 +1,9 @@
 all: main numbers run
 
-SRC=linux-x86-64.S startup-linux-x86-64.S main.c start.c system-call.h
+SRC=syscall-linux-x86-64.S startup-linux-x86-64.S main.c start.c system-call.h
 
 main: ${SRC}
-	gcc -g -nostdlib linux-x86-64.S startup-linux-x86-64.S start.c main.c -o main
+	gcc -g -nostdlib startup-linux-x86-64.S syscall-linux-x86-64.S start.c main.c -o main
 
 run: main
 	./main hello there
