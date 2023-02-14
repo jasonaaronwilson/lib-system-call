@@ -126,21 +126,3 @@ int main(int argc, char **argv, char **envp) {
 
   return 0;
 }
-
-void c_underscore_start(long int *stk_ptr) {
-  long int argc = *stk_ptr;
-  char **argv = (char **) &stk_ptr[1];
-  char **envp = (char **) &stk_ptr[2+argc];
-  main(argc, argv, envp);
-  syscall(SYS_exit, 1);
-}
-
-/*
-// Tell the compiler incoming stack alignment is not RSP%16==8 or ESP%16==12
-__attribute__((force_align_arg_pointer))
-void _start() {
-  main(0, 0);
-    __builtin_unreachable();  // tell the compiler to make sure side effects are done before the asm statement
-}
-*/
-
