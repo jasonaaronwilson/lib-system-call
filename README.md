@@ -1,53 +1,34 @@
-# (Unix) System Call Library
+# System Call Library
 
-This exteremely low-level library is meant to be a tiny implementation
-of Unix system calls (in particular for Linux) from C directly into
-the kernel on Unix like systems avoiding the need for any direct usage
-of assembly language in projects that rely on it. It is meant to
-generate the smallest possible and least dependent executables in a
-Unix environment, aka, no need for glibc or even alternative C
-standard libraries such as uClibc, Diet libc, and newlib.
-
-This library can also be used anywhere that glibc can be used and the
-earliest checkins will simply use glibc.
+This library provides the "indirect" system call function separate
+from libc (aka syscall from unistd.h).
 
 ## Rationale
 
-This is primarily meant for language compilers that would like to
-target C code as though it were assembly language but otherwise would
-prefer to not use *any* C standard libraries.
+This is primarily meant for language compiler writers that would like
+to target C code as though it were assembly language but otherwise
+would prefer to not use *any* C standard libraries.
 
 ## Platforms
 
-We will initially target only gcc and clang on Linux in 64 bit mode.
+We will initially target gcc and clang on x86-64 bit Linux.
 
 ## Usage
 
-This can be used as a either a "single header file library" or as a
-more standard header file plus linking in a ".a" file.
+    gcc -nostdlib linux-x86-64.S main.c -o main
 
-The single header file version would look like roughly like this:
+Where main can be as simple as 
 
-    #include "lib-system-call-single-header-file-library.h"
+    #include "system-call.h"
 
     void main(int argc, char **argv) {
          long error = syscall(SYS_exit, 42);
          return 0;
     }
 
-The more standard library version would look like:
-
-    #include "lib-system-call.h"
-
-    int main(int argc, char **argv) {
-         long error = syscall(SYS_exit, 42);
-         return 0;
+    // Tell the compiler incoming stack alignment is not RSP%16==8 or ESP%16==12
+    __attribute__((force_align_arg_pointer))
+    void _start() {
+        main(0, 0);
+        __builtin_unreachable();  // tell the compiler to make sure side effects are done before the asm statement
     }
-
-And then a flag will be required to the C compiler or linker
-invocation to find the ".a" file that actually implements the extern
-"syscall".
-
-Note that "#include <sys/syscall.h>" and "#include <unistd.h>" do
-*not* (and probably should not) be included as would typically be done
-when using glibc.
