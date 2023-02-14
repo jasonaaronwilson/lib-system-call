@@ -1,3 +1,10 @@
+//
+//
+// This is simply *demonstration*/test code and will not effect your
+// final size or speed.
+// 
+//
+
 #include "system-call.h"
 
 #define PATH_MAX 4096
@@ -109,9 +116,6 @@ int main(int argc, char **argv, char **envp) {
     show_number(i);
     show_c_string(var);
   }
-
-  // Test our long to string
-  // long_to_c_string(buffer, 9190919);
 
   show_current_working_directory();
   result = syscall(SYS_chdir, "..");

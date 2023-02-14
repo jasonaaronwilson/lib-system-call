@@ -1,5 +1,10 @@
-# System Call Library
+# README
 
+This directory has two related projects:
+
+1. A non "libc" minimal process startup replacement
+2. A non "libc" syscall library
+
 This library provides the "indirect" system call interface (namely the
 same syscall function from from unistd.h) separate from libc.
 
