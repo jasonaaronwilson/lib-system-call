@@ -29,7 +29,9 @@ https://0xax.gitbooks.io/linux-insides/content/Misc/linux-misc-4.html
     |       argc      | <- rsp
     +-----------------+
 
-The point of startup-linux-x86-64.S is to call main with argc, argc,
-and envp so that you don't need any other libraries for your extremely
-low-level code that is possibly using "system-call.h" for all of it's
-other needs.
+The point of startup-linux-x86-64.S and startup.c is to call main with
+argc, argv, and envp so that you don't need any other libraries for
+your extremely low-level code that doesn't depend on anything except
+except a very small routine to do system calls. Our sample program
+with no debug information is 14,392 bytes 
+
