@@ -137,6 +137,14 @@ int main(int argc, char **argv, char **envp) {
   result = syscall(SYS_chdir, "/");
   print_current_working_directory();
 
+  long* addr = (long *) syscall(SYS_mmap, 0, 8192, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+  print_c_string("Memory was mapped at ");
+  print_number((long) addr);
+  print_newline();
+  addr[0] = 4242;
+  print_number(*addr);
+  print_newline();
+
   result = syscall(SYS_exit, 0);
 
   return 0;

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <sys/mman.h>
 
 int main(int argc, char **argv) {
   fprintf(stdout, "#define SYS_accept %d\n", SYS_accept);
@@ -340,5 +341,15 @@ int main(int argc, char **argv) {
   fprintf(stdout, "#define SYS_waitid %d\n", SYS_waitid);
   fprintf(stdout, "#define SYS_write %d\n", SYS_write);
   fprintf(stdout, "#define SYS_writev %d\n", SYS_writev);
+
+  fprintf(stdout, "#define PROT_NONE %d\n", PROT_NONE);
+  fprintf(stdout, "#define PROT_READ %d\n", PROT_READ);
+  fprintf(stdout, "#define PROT_WRITE %d\n", PROT_WRITE);
+  fprintf(stdout, "#define PROT_EXEC %d\n", PROT_EXEC);
+
+  fprintf(stdout, "#define MAP_ANONYMOUS %d\n", MAP_ANONYMOUS);
+  fprintf(stdout, "#define MAP_SHARED %d\n", MAP_SHARED);
+  fprintf(stdout, "#define MAP_PRIVATE %d\n", MAP_PRIVATE);
+  fprintf(stdout, "#define MAP_32BIT %d\n", MAP_32BIT);
 }
 
