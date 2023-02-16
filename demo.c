@@ -1,7 +1,8 @@
 //
 //
-// This is simply *demonstration*/test code and will not effect your
-// final size or speed.
+// This is a *demonstration* (test) that will not effect your final
+// size or speed if you use these libraries to run without the C
+// standard library.
 // 
 //
 
@@ -9,7 +10,7 @@
 
 #define PATH_MAX 4096
 
-void show_newline() {
+void print_newline() {
   syscall(SYS_write, 1, "\n", 1);
 }
 
@@ -32,9 +33,8 @@ long c_string_length(char *str) {
 //
 // Print a string to stdout followed by a newline.
 // 
-void show_c_string(char *str) {
+void print_c_string(char *str) {
   syscall(SYS_write, 1, str, c_string_length(str));
-  show_newline();
 }
 
 //
@@ -45,15 +45,13 @@ void reverse_c_string(char *str) {
   if (len > 1) {
     long low = 0;
     long high = len - 1;
-  loop:
-    if (low < high) {
+    while (low < high) {
       char low_ch = str[low];
       char high_ch = str[high];
       str[low] = high_ch;
       str[high] = low_ch;
       low += 1;
       high -= 1;
-      goto loop;
     }
   }
 }
@@ -83,50 +81,63 @@ void long_to_c_string(char *buffer, long number) {
 //
 // Print a non-negative number to stdout with a newline.
 //
-void show_number(long number) {
+void print_number(long number) {
   long result = 0;
   char buffer[PATH_MAX];
   long_to_c_string(buffer, number);
-  show_c_string(buffer);
+  print_c_string(buffer);
+}
+
+void print_char(char ch, int times) {
+  char buffer[times + 1];
+  for (int i = 0; i < times; i++) {
+    buffer[i] = ch;
+  }
+  buffer[times+1] = 0;
+  print_c_string(buffer);
 }
 
 //
 // Print the current working directory to stdout with a newline.
 //
-void show_current_working_directory() {
+void print_current_working_directory() {
   long result = 0;
   char buffer[PATH_MAX];
   result = syscall(SYS_getcwd, buffer, PATH_MAX);
-  show_c_string(buffer);
+  print_c_string(buffer);
+  print_newline();
 }
 
 int main(int argc, char **argv, char **envp) {
   long result = 0;
 
+  print_c_string("** Command line arguments **\n");
   for (int i = 0; i < argc; i++) {
-    show_number(i);
-    show_c_string(argv[i]);
+    print_number(i);
+    print_char(' ', 4);
+    print_c_string(argv[i]);
+    print_newline();
   }
 
+  print_c_string("\n**Environment**\n");
   for (int i = 0; 1; i++) {
     char* var = envp[i];
     if (var == 0) {
       break;
     }
-    show_number(i);
-    show_c_string(var);
+    print_number(i);
+    print_char(' ', 4);
+    print_c_string(var);
+    print_newline();
   }
 
-  show_current_working_directory();
+  print_current_working_directory();
   result = syscall(SYS_chdir, "..");
-  show_current_working_directory();
+  print_current_working_directory();
   result = syscall(SYS_chdir, "/");
-  show_current_working_directory();
+  print_current_working_directory();
 
-  // Obviously it is useful to be able to print strings.
-  result = syscall(SYS_write, 1, "Hello World!\n", 13);
-
-  result = syscall(SYS_exit, 42);
+  result = syscall(SYS_exit, 0);
 
   return 0;
 }
