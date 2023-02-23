@@ -8,7 +8,7 @@
  * It's less common to see main taking envp but this prototype only
  * has to work here.
  */
-extern long main(long argc, char** argv, char** envp);
+extern int main(int argc, char** argv, char** envp);
 
 /**
  * This is called immediately after _start with a pointer to the top
