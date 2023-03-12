@@ -7,11 +7,12 @@ main: ${SRC}
 	gcc -nostdlib startup-linux-x86-64.S syscall-linux-x86-64.S startup.c demo.c -o demo.skinny
 	gcc hello.c -o hello
 
-run: main
-	./demo hello there
-
 numbers: ${SRC} system-call-numbers.c
 	gcc system-call-numbers.c -o system-call-numbers
+
+run: main
+	./demo hello there
+	./system-call-numbers
 
 clean:
 	rm -f *~ a.out ./system-call-numbers demo demo.skinny hello *~ 

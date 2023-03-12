@@ -2,6 +2,8 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <fcntl.h>
+#include <time.h>
 
 // ($define-constant BYTE_BUFFER_BYTES 0)
 
@@ -361,4 +363,22 @@ int main(int argc, char **argv) {
   define_constant("MAP_SHARED", MAP_SHARED);
   define_constant("MAP_PRIVATE", MAP_PRIVATE);
   define_constant("MAP_32BIT", MAP_32BIT);
+
+  define_constant("O_ACCMODE", O_ACCMODE);
+  define_constant("O_APPEND", O_APPEND);
+  define_constant("O_CREAT", O_CREAT);
+  define_constant("O_DSYNC", O_DSYNC);
+  define_constant("O_EXCL", O_EXCL);
+  define_constant("O_NOCTTY", O_NOCTTY);
+  define_constant("O_NONBLOCK", O_NONBLOCK);
+  define_constant("O_RDONLY", O_RDONLY);
+  define_constant("O_RDWR", O_RDWR);
+  define_constant("O_RSYNC", O_RSYNC);
+  define_constant("O_SYNC", O_SYNC);
+  define_constant("O_TRUNC", O_TRUNC);
+  define_constant("O_WRONLY", O_WRONLY);
+
+  define_constant("CLOCK_REALTIME", CLOCK_REALTIME);
+  define_constant("CLOCK_MONOTONIC", CLOCK_MONOTONIC);
+  define_constant("CLOCK_BOOTTIME", CLOCK_BOOTTIME);
 }
