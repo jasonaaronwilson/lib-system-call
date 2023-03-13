@@ -155,7 +155,6 @@ int end_bit(unsigned char* bytes, int max_bytes) {
 
 struct structure_field_metadata {
   int field_type;
-  char* struct_name;
   char* field_name;
   int start_bit;
   int end_bit;
@@ -169,6 +168,33 @@ struct structure_metadata {
   struct structure_field_metadata fields[256];
 };
 
+// I'm too lazy to write the default code. We want to first convert
+// from CamelCase to "snake" case. Then we can drop "_t" if it appears
+// at the end.
+char* convert_structure_name(char *name) {
+  if (strcmp(name, "Foo_t") == 0) {
+    return "foo";
+  }
+  return name;
+}
+
+char* generate_unsigned_load(int start_bit, int end_bit) {
+  char *buffer = malloc(1024);
+  int size = end_bit - start_bit;
+  if (size == 8 && ((start_bit % 8) == 0)) {
+    sprintf(buffer, "($load-8 ($add ptr %d))", start_bit / 8);
+  } else if (size == 16 && ((start_bit % 16) == 0)) {
+    sprintf(buffer, "($load-16 ($add ptr %d))", start_bit / 8);
+  } else if (size == 32 && ((start_bit % 32) == 0)) {
+    sprintf(buffer, "($load-32 ($add ptr %d))", start_bit / 8);
+  } else if (size == 64 && ((start_bit % 64) == 0)) {
+    sprintf(buffer, "($load-64 ($add ptr %d))", start_bit / 8);
+  } else {
+    sprintf(buffer, "(load-unsigned-bit-field ptr %d %d)", start_bit, end_bit);
+  }
+  return buffer;
+}
+
 // These are meant to be redefined later to actually generate code for
 // various languages.
 
@@ -178,11 +204,24 @@ void define_structure_start(char *struct_name,
                             int size, 
                             int alignment) {
   memset(&metadata, 0, sizeof(metadata));
+  metadata.name = convert_structure_name(struct_name);
+  metadata.size = size;
+  metadata.alignment = alignment;
   printf("structure name=%s size=%d alignment=%d\n", struct_name, size, alignment);
 }
 
 void define_structure_end(char *struct_name) {
   // This method is useful to generate code once all fields are known.
+  printf("(define-function (make-%s $returns pointer) (malloc %d))\n", metadata.name, metadata.size);
+  printf("(define-function (free-%s (ptr pointer) $returns void) (free ptr))\n", metadata.name, metadata.size);
+  printf("(define-function (size-of-%s $returns uint64) %d)\n", metadata.name, metadata.size);
+  for (int i = 0; (i < metadata.num_fields); i++) {
+    struct structure_field_metadata field = metadata.fields[i];
+    printf("(define-function (%s:load-%s (ptr pointer) $returns uint64) %s)\n",
+           metadata.name, 
+           metadata.fields[i].field_name,
+           generate_unsigned_load(field.start_bit, field.end_bit));
+  }
 }
 
 void define_structure_field(int field_type,
@@ -193,7 +232,6 @@ void define_structure_field(int field_type,
   printf("    %s=%s start=%d end=%d\n", field_type_to_string(field_type), field_name, start_bit, end_bit);
   struct structure_field_metadata field_md = {
     .field_type = field_type,
-    .struct_name = struct_name,
     .field_name = field_name,
     .start_bit = start_bit,
     .end_bit = end_bit,
