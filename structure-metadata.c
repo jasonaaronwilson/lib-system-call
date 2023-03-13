@@ -70,6 +70,14 @@ void define_structure_field(int field_type,
     end_bit(&struct_name##__instance, sizeof(struct_name))                     \
   )
 
+#define NORMAL_FIELD(struct_name, field_name, field_type)                      \
+  define_structure_field(field_type, #struct_name, #field_name,                \
+    8 * PTR_OFFSET(&struct_name##__instance,                                   \
+                   &struct_name##__instance.field_name),                       \
+                         8 * (PTR_OFFSET(&struct_name##__instance,             \
+                                         &struct_name##__instance.field_name)  \
+                              + sizeof(&struct_name##__instance.field_name)))
+
 #define SIGNED_INTEGER_FIELD(struct_name, field_name)                          \
   memset(&struct_name##__instance, 0, sizeof(struct_name));                    \
   struct_name##__instance.field_name = (long long)-1;                          \
@@ -87,12 +95,7 @@ void define_structure_field(int field_type,
   )
 
 #define FLOATING_POINT_FIELD(struct_name, field_name)                          \
-  memset(&struct_name##__instance, 0, sizeof(struct_name));                    \
-  struct_name##__instance.field_name = (long long)-1;                          \
-  define_structure_field(FIELD_TYPE_FLOATING_POINT, #struct_name, #field_name, \
-              start_bit(&struct_name##__instance, sizeof(struct_name)),        \
-              end_bit(&struct_name##__instance, sizeof(struct_name))           \
-  )
+ NORMAL_FIELD(struct_name, field_name, FIELD_TYPE_FLOATING_POINT)
 
 #define POINTER_FIELD(struct_name, field_name)                                 \
   memset(&struct_name##__instance, 0, sizeof(struct_name));                    \
