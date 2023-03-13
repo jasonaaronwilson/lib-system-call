@@ -52,7 +52,8 @@ int is_field_type_addressable(int value) {
   return 1;
 }
 
-// Forward Declarations
+// Forward Declarations. In the future it will be possible to swap
+// these out with your own functions.
 
 void define_structure_start(char *struct_name,
                             int size, 
@@ -169,6 +170,7 @@ struct structure_field_metadata {
 };
 
 struct structure_metadata {
+  char* original_name;
   char* name;
   int size;
   int alignment;
@@ -176,6 +178,11 @@ struct structure_metadata {
   struct structure_field_metadata fields[256];
 };
 
+//
+// Structure and field "renaming".
+//
+// TODO(jawilson): make these renamings defined in place...
+
 // I'm too lazy to write the default code. We want to first convert
 // from CamelCase to "snake" case. Then we can drop "_t" if it appears
 // at the end.
@@ -205,10 +212,23 @@ char* rename_field_name(char *struct_name, char *field_name) {
 
   return field_name;
 }
+
+//
+// Generate an expression for a load or store of a "finite" sized
+// quantity.
+//
+// TODO(jawilson): signed loads, more optimal loading of bitfields.
+//
 
 char* generate_unsigned_load(int start_bit, int end_bit) {
   char *buffer = malloc(1024);
   int size = end_bit - start_bit;
+
+  if (size > 64) {
+    printf("Size is too large to load as a 64bit unsigned integer");
+    exit(1);
+  }
+
   if (size == 8 && ((start_bit % 8) == 0)) {
     sprintf(buffer, "($load-8 ($add ptr %d))", start_bit / 8);
   } else if (size == 16 && ((start_bit % 16) == 0)) {
@@ -239,9 +259,11 @@ char* generate_store(int start_bit, int end_bit, char* value) {
   }
   return buffer;
 }
-
+
+//
 // These are meant to be redefined later to actually generate code for
-// various languages.
+// various languages/purposes.
+//
 
 struct structure_metadata metadata;
 
@@ -249,15 +271,24 @@ void define_structure_start(char *struct_name,
                             int size, 
                             int alignment) {
   memset(&metadata, 0, sizeof(metadata));
+  metadata.original_name = struct_name;
   metadata.name = rename_structure_name(struct_name);
   metadata.size = size;
   metadata.alignment = alignment;
   printf("structure name=%s size=%d alignment=%d\n", struct_name, size, alignment);
 }
 
+
+// Delay generation until we know all the fields. This will allow us
+// to create "print" routines for an entire structure based on it's
+// fields.
+
 void define_structure_end(char *struct_name) {
-  // This method is useful to generate code once all fields are known.
   printf("\n\n");
+  printf("// ======================================================================\n");
+  printf("// %s (Linux name %s)\n", metadata.name, metadata.original_name);
+  printf("// ======================================================================\n\n");
+
   printf("($define-function (make-%s $returns pointer) (malloc %d))\n", 
          metadata.name, metadata.size);
   printf("($define-function (size-of-%s $returns uint64) %d)\n", 
@@ -287,8 +318,7 @@ void define_structure_end(char *struct_name) {
     }
   }
 
-  // TODO(jawilson): clear-STRUCTURE-NAME
-  // TODO(jawilson): clear-FIELD-NAME
+  // TODO(jawilson): STRUCTURE-NAME:clear-FIELD-NAME
 }
 
 void define_structure_field(int field_type,
@@ -306,11 +336,9 @@ void define_structure_field(int field_type,
   metadata.fields[metadata.num_fields++] = field_md;
 }
 
-//
-// This is just sample code.
-// 
+// This is a demo struct and can go away once we have enough coverage
+// from real structures.
 
-// This could of course come from a header file.
 struct Foo {
   int bitfield0 : 3;
   unsigned int bitfield1 : 1;
@@ -321,11 +349,15 @@ struct Foo {
   long some_array[5];
 };
 
-// If the structure isn't typedef'd, we need to do that now. This
-// obviously changed the name of the structure but many code
-// generators will want to want to strip off _t anyways...
+// If the structure isn't typedef'd, like the one above, we need to do
+// that now otherwise our macros won't work. This obviously changes
+// the name of the structure but many code generators will want to
+// want to strip off _t and make other renamings anyways.
 
 typedef struct Foo Foo_t;
+
+// Finally we are ready to start generating "minimal" functions for
+// important Linux/Unix data-structures.
 
 #include <time.h>
 #include <sys/stat.h>
@@ -336,6 +368,7 @@ typedef struct stat stat_t;
 void main() {
   char *current_struct_name = NULL;
 
+  // TODO(jawilson): remove once all of these combinations are done.
   DEFINE_STRUCTURE_START(Foo_t);
   {
     SIGNED_BIT_FIELD(Foo_t, bitfield0);
