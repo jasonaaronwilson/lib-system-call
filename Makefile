@@ -1,14 +1,12 @@
-all: main numbers run
+all: main run
 
 SRC=syscall-linux-x86-64.S startup-linux-x86-64.S demo.c startup.c system-call.h hello.c
 
-main: ${SRC}
+main: ${SRC} system-call-numbers.c
 	gcc -g -nostdlib startup-linux-x86-64.S syscall-linux-x86-64.S startup.c demo.c -o demo
 	gcc -nostdlib startup-linux-x86-64.S syscall-linux-x86-64.S startup.c demo.c -o demo.skinny
 	gcc hello.c -o hello
 	gcc -g -o structure-metadata structure-metadata.c
-
-numbers: ${SRC} system-call-numbers.c
 	gcc system-call-numbers.c -o system-call-numbers
 
 run: main

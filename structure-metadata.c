@@ -12,7 +12,7 @@
 #include <stdlib.h>
 
 // The warnings don't actually stop compilation though they make it
-// harders to see other errors.
+// harders to see other errors....
 //
 // gcc -Wno-overflow -Wno-int-conversion -Wno-incompatible-pointer-types foo.c && ./a.out 
 
@@ -86,6 +86,7 @@ void define_structure_field(int field_type,
      exit(1);                                                                  \
   }                                                                            \
   define_structure_end(current_struct_name);                                   \
+  clear_renames();                                                             \
   current_struct_name = NULL;
 
 // This is used for UNSIGNED_BIT_FIELD and SIGNED_BIT_FIELD
@@ -179,14 +180,48 @@ struct structure_metadata {
 };
 
 //
-// Structure and field "renaming".
+// Structure name and field name "renaming".
 //
-// TODO(jawilson): make these renamings defined in place...
 
-// I'm too lazy to write the default code. We want to first convert
-// from CamelCase to "snake" case. Then we can drop "_t" if it appears
-// at the end.
+// In part we are just too lazy to write code for the default case. We
+// want to first convert from CamelCase to "-" (snake) case. Then we
+// can drop "-t" if it appears at the end. Instead 
+
+int number_of_renames = 0;
+
+struct renaming {
+  char* original_structure_name;
+  char* structure_name;
+  char* original_field_name;
+  char* field_name;
+};
+
+struct renaming renamings[4096];
+
+void internal_rename(char* original_structure_name,
+            char* structure_name,
+            char* original_field_name,
+            char* field_name) {
+  renamings[number_of_renames].original_structure_name = original_structure_name;
+  renamings[number_of_renames].structure_name = structure_name;
+  renamings[number_of_renames].original_field_name = original_field_name;
+  renamings[number_of_renames].field_name = field_name;
+  number_of_renames++;
+}
+
+void clear_renames() {
+  number_of_renames = 0;
+}
+
+#define RENAME_STRUCTURE(original_name, new_name) \
+  internal_rename(#original_name, new_name, 0, 0)
+
+#define RENAME_FIELD(original_name, original_field_name, field_name)  \
+  internal_rename(#original_name, 0, #original_field_name, field_name)
+  
+
 char* rename_structure_name(char *name) {
+  /*
   if (strcmp(name, "Foo_t") == 0) {
     return "foo";
   }
@@ -196,10 +231,21 @@ char* rename_structure_name(char *name) {
   if (strcmp(name, "stat_t") == 0) {
     return "os-file-status";
   }
+  */
+
+  for (int i = 0; i < number_of_renames; i++) {
+    if (strcmp(renamings[i].original_structure_name, name) == 0
+        && renamings[i].original_field_name == NULL) {
+      return renamings[i].structure_name;
+    }
+  }
+
   return name;
 }
 
 char* rename_field_name(char *struct_name, char *field_name) {
+
+  /*
 
   if (strcmp(struct_name, "timespec_t") == 0) {
     if (strcmp(field_name, "tv_sec") == 0) {
@@ -207,6 +253,15 @@ char* rename_field_name(char *struct_name, char *field_name) {
     }
     if (strcmp(field_name, "tv_nsec") == 0) {
       return "nanos";
+    }
+  }
+  */
+
+  for (int i = 0; i < number_of_renames; i++) {
+    if (strcmp(renamings[i].original_structure_name, struct_name) == 0
+        && renamings[i].original_field_name != NULL
+        && strcmp(renamings[i].original_field_name, field_name) == 0) {
+      return renamings[i].field_name;
     }
   }
 
@@ -275,7 +330,9 @@ void define_structure_start(char *struct_name,
   metadata.name = rename_structure_name(struct_name);
   metadata.size = size;
   metadata.alignment = alignment;
-  printf("structure name=%s size=%d alignment=%d\n", struct_name, size, alignment);
+  if (0) {
+    printf("structure name=%s size=%d alignment=%d\n", struct_name, size, alignment);
+  }
 }
 
 
@@ -285,9 +342,9 @@ void define_structure_start(char *struct_name,
 
 void define_structure_end(char *struct_name) {
   printf("\n\n");
-  printf("// ======================================================================\n");
-  printf("// %s (Linux name %s)\n", metadata.name, metadata.original_name);
-  printf("// ======================================================================\n\n");
+  printf(";;; ======================================================================\n");
+  printf(";;; %s (Linux name %s)\n", metadata.name, metadata.original_name);
+  printf(";;; ======================================================================\n\n");
 
   printf("($define-function (make-%s $returns pointer) (malloc %d))\n", 
          metadata.name, metadata.size);
@@ -326,7 +383,9 @@ void define_structure_field(int field_type,
                             char *field_name,
                             int start_bit,
                             int end_bit) {
-  printf("    %s=%s start=%d end=%d\n", field_type_to_string(field_type), field_name, start_bit, end_bit);
+  if (0) {
+    printf("    %s=%s start=%d end=%d\n", field_type_to_string(field_type), field_name, start_bit, end_bit);
+  }
   struct structure_field_metadata field_md = {
     .field_type = field_type,
     .field_name = rename_field_name(struct_name, field_name),
@@ -381,12 +440,39 @@ void main() {
   }
   DEFINE_STRUCTURE_END(Foo_t);
 
+  // ======================================================================
+  // timespec (Linux name timespec_t)
+  // ======================================================================
+
+  RENAME_STRUCTURE(timespec_t, "timespec");
+  RENAME_FIELD(timespec_t, tv_sec, "seconds");
+  RENAME_FIELD(timespec_t, tv_nsec, "nanos");
+
   DEFINE_STRUCTURE_START(timespec_t);
   {
     UNSIGNED_INTEGER_FIELD(timespec_t, tv_sec);
     UNSIGNED_INTEGER_FIELD(timespec_t, tv_nsec);
   }
   DEFINE_STRUCTURE_END(timespec_t);
+
+  // ======================================================================
+  // os-file-status (Linux name stat_t)
+  // ======================================================================
+
+  RENAME_STRUCTURE(stat_t, "os-file-status");
+  RENAME_FIELD(stat_t, st_dev, "device-id");
+  RENAME_FIELD(stat_t, st_ino, "inode-number");
+  RENAME_FIELD(stat_t, st_mode, "mode");
+  RENAME_FIELD(stat_t, st_nlink, "hardlink-count");
+  RENAME_FIELD(stat_t, st_uid, "user-id");
+  RENAME_FIELD(stat_t, st_gid, "group-id");
+  RENAME_FIELD(stat_t, st_rdev, "special-file-device-id");
+  RENAME_FIELD(stat_t, st_size, "size");
+  RENAME_FIELD(stat_t, st_blksize, "file-system-block-size");
+  RENAME_FIELD(stat_t, st_blocks, "number-of-blocks");
+  RENAME_FIELD(stat_t, st_atim, "access-time");
+  RENAME_FIELD(stat_t, st_mtim, "modification-time");
+  RENAME_FIELD(stat_t, st_ctim, "modification-status-change-time");
 
   DEFINE_STRUCTURE_START(stat_t);
   {
@@ -406,6 +492,7 @@ void main() {
   }
   DEFINE_STRUCTURE_END(stat_t);
 
+  // ======================================================================
 
   if (current_struct_name != NULL) {
     printf("ERROR: missing DEFINE_STRUCTURE_END\n");
