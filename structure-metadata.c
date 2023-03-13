@@ -44,6 +44,14 @@ char *field_type_to_string(int value) {
   exit(1);
 }
 
+int is_field_type_addressable(int value) {
+  switch (value) {
+  case FIELD_TYPE_SIGNED_BIT_FIELD: return 0;
+  case FIELD_TYPE_UNSIGNED_BIT_FIELD: return 0;
+  }
+  return 1;
+}
+
 // Forward Declarations
 
 void define_structure_start(char *struct_name,
@@ -219,8 +227,14 @@ void define_structure_end(char *struct_name) {
     struct structure_field_metadata field = metadata.fields[i];
     printf("(define-function (%s:load-%s (ptr pointer) $returns uint64) %s)\n",
            metadata.name, 
-           metadata.fields[i].field_name,
+           field.field_name,
            generate_unsigned_load(field.start_bit, field.end_bit));
+    if (is_field_type_addressable(field.field_type)) {
+      printf("(define-function (%s:address-of-%s (ptr pointer) $returns uint64) ($add ptr %d))\n",
+             metadata.name, 
+             field.field_name,
+             field.start_bit / 8);
+    }
   }
 }
 
