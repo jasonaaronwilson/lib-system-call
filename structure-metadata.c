@@ -190,13 +190,11 @@ void main() {
   char *current_struct_name = NULL;
   DEFINE_STRUCTURE_START(Foo_t);
   BIT_FIELD(Foo_t, bitfield0);
-  /*
   BIT_FIELD(Foo_t, bitfield1);
   UNSIGNED_INTEGER_FIELD(Foo_t, bar);
   UNSIGNED_INTEGER_FIELD(Foo_t, baz);
   POINTER_FIELD(Foo_t, qux);
   FLOATING_POINT_FIELD(Foo_t, boof);
-  */
   DEFINE_STRUCTURE_END(Foo_t);
 
   if (current_struct_name != NULL) {
