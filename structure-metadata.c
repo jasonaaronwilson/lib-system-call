@@ -179,7 +179,7 @@ struct structure_metadata {
 // I'm too lazy to write the default code. We want to first convert
 // from CamelCase to "snake" case. Then we can drop "_t" if it appears
 // at the end.
-char* convert_structure_name(char *name) {
+char* rename_structure_name(char *name) {
   if (strcmp(name, "Foo_t") == 0) {
     return "foo";
   }
@@ -187,6 +187,19 @@ char* convert_structure_name(char *name) {
     return "timespec";
   }
   return name;
+}
+
+char* rename_field_name(char *struct_name, char *field_name) {
+  if (strcmp(struct_name, "timespec_t") == 0) {
+    if (strcmp(field_name, "tv_sec") == 0) {
+      return "seconds";
+    }
+    if (strcmp(field_name, "tv_nsec") == 0) {
+      return "nanos";
+    }
+  }
+
+  return field_name;
 }
 
 char* generate_unsigned_load(int start_bit, int end_bit) {
@@ -232,7 +245,7 @@ void define_structure_start(char *struct_name,
                             int size, 
                             int alignment) {
   memset(&metadata, 0, sizeof(metadata));
-  metadata.name = convert_structure_name(struct_name);
+  metadata.name = rename_structure_name(struct_name);
   metadata.size = size;
   metadata.alignment = alignment;
   printf("structure name=%s size=%d alignment=%d\n", struct_name, size, alignment);
@@ -276,7 +289,7 @@ void define_structure_field(int field_type,
   printf("    %s=%s start=%d end=%d\n", field_type_to_string(field_type), field_name, start_bit, end_bit);
   struct structure_field_metadata field_md = {
     .field_type = field_type,
-    .field_name = field_name,
+    .field_name = rename_field_name(struct_name, field_name),
     .start_bit = start_bit,
     .end_bit = end_bit,
   };
