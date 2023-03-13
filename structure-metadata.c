@@ -253,9 +253,14 @@ void define_structure_start(char *struct_name,
 
 void define_structure_end(char *struct_name) {
   // This method is useful to generate code once all fields are known.
-  printf("($define-function (make-%s $returns pointer) (malloc %d))\n", metadata.name, metadata.size);
-  printf("($define-function (free-%s (ptr pointer) $returns void) (free ptr))\n", metadata.name, metadata.size);
-  printf("($define-function (size-of-%s $returns uint64) %d)\n", metadata.name, metadata.size);
+  printf("($define-function (make-%s $returns pointer) (malloc %d))\n", 
+         metadata.name, metadata.size);
+  printf("($define-function (size-of-%s $returns uint64) %d)\n", 
+         metadata.name, metadata.size);
+  printf("($define-function (free-%s (ptr pointer) $returns void) (free ptr))\n", 
+         metadata.name, metadata.size);
+  printf("($define-function (clear-%s (ptr pointer) $returns void) (memset ptr 0 %d))\n", 
+         metadata.name, metadata.size);
   for (int i = 0; (i < metadata.num_fields); i++) {
     struct structure_field_metadata field = metadata.fields[i];
 
