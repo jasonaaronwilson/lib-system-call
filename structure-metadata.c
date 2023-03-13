@@ -17,7 +17,8 @@
 // gcc -Wno-overflow -Wno-int-conversion -Wno-incompatible-pointer-types foo.c && ./a.out 
 
 enum FieldType {
-  FIELD_TYPE_BIT_FIELD,
+  FIELD_TYPE_SIGNED_BIT_FIELD,
+  FIELD_TYPE_UNSIGNED_BIT_FIELD,
   FIELD_TYPE_SIGNED_INTEGER,
   FIELD_TYPE_UNSIGNED_INTEGER,
   FIELD_TYPE_FLOATING_POINT,
@@ -26,6 +27,22 @@ enum FieldType {
   FIELD_TYPE_STRUCTURE,
   FIELD_TYPE_UNION
 };
+
+char *field_type_to_string(int value) {
+  switch (value) {
+  case FIELD_TYPE_SIGNED_BIT_FIELD: return "FIELD_TYPE_SIGNED_BIT_FIELD";
+  case FIELD_TYPE_UNSIGNED_BIT_FIELD: return "FIELD_TYPE_UNSIGNED_BIT_FIELD";
+  case FIELD_TYPE_SIGNED_INTEGER: return "FIELD_TYPE_SIGNED_INTEGER";
+  case FIELD_TYPE_UNSIGNED_INTEGER: return "FIELD_TYPE_UNSIGNED_INTEGER";
+  case FIELD_TYPE_FLOATING_POINT: return "FIELD_TYPE_FLOATING_POINT";
+  case FIELD_TYPE_POINTER: return "FIELD_TYPE_POINTER";
+  case FIELD_TYPE_ARRAY: return "FIELD_TYPE_ARRAY";
+  case FIELD_TYPE_STRUCTURE: return "FIELD_TYPE_STRUCTURE";
+  case FIELD_TYPE_UNION: return "FIELD_TYPE_UNION";
+  }
+  printf("ERROR: field type out of range.\n");
+  exit(1);
+}
 
 // Forward Declarations
 
@@ -62,15 +79,16 @@ void define_structure_field(int field_type,
   define_structure_end(current_struct_name);                                   \
   current_struct_name = NULL;
 
-#define BIT_FIELD(struct_name, field_name)                                     \
+// This is used for UNSIGNED_BIT_FIELD and SIGNED_BIT_FIELD
+#define _BIT_FIELD(struct_name, field_name, field_type)                        \
   memset(&struct_name##__instance, 0, sizeof(struct_name));                    \
   struct_name##__instance.field_name = (long long)-1;                          \
-  define_structure_field(FIELD_TYPE_BIT_FIELD, #struct_name, #field_name,      \
+  define_structure_field(field_type, #struct_name, #field_name,                \
     start_bit(&struct_name##__instance, sizeof(struct_name)),                  \
     end_bit(&struct_name##__instance, sizeof(struct_name))                     \
   )
 
-#define NORMAL_FIELD(struct_name, field_name, field_type)                      \
+#define _NORMAL_FIELD(struct_name, field_name, field_type)                     \
   define_structure_field(field_type, #struct_name, #field_name,                \
     8 * PTR_OFFSET(&struct_name##__instance,                                   \
                    &struct_name##__instance.field_name),                       \
@@ -78,47 +96,32 @@ void define_structure_field(int field_type,
                                          &struct_name##__instance.field_name)  \
                               + sizeof(&struct_name##__instance.field_name)))
 
-#define SIGNED_INTEGER_FIELD(struct_name, field_name)                          \
-  memset(&struct_name##__instance, 0, sizeof(struct_name));                    \
-  struct_name##__instance.field_name = (long long)-1;                          \
-  define_structure_field(FIELD_TYPE_SIGNED_INTEGER, #struct_name, #field_name, \
-              start_bit(&struct_name##__instance, sizeof(struct_name)),        \
-              end_bit(&struct_name##__instance, sizeof(struct_name))           \
-  )
+#define UNSIGNED_BIT_FIELD(struct_name, field_name) \
+  _BIT_FIELD(struct_name, field_name, FIELD_TYPE_UNSIGNED_BIT_FIELD)
 
-#define UNSIGNED_INTEGER_FIELD(struct_name, field_name)                        \
-  memset(&struct_name##__instance, 0, sizeof(struct_name));                    \
-  struct_name##__instance.field_name = (long long)-1;                          \
-  define_structure_field(FIELD_TYPE_UNSIGNED_INTEGER, #struct_name, #field_name, \
-              start_bit(&struct_name##__instance, sizeof(struct_name)),        \
-              end_bit(&struct_name##__instance, sizeof(struct_name))           \
-  )
+#define SIGNED_BIT_FIELD(struct_name, field_name) \
+  _BIT_FIELD(struct_name, field_name, FIELD_TYPE_SIGNED_BIT_FIELD)
 
-#define FLOATING_POINT_FIELD(struct_name, field_name)                          \
- NORMAL_FIELD(struct_name, field_name, FIELD_TYPE_FLOATING_POINT)
+#define SIGNED_INTEGER_FIELD(struct_name, field_name) \
+  _BIT_FIELD(struct_name, field_name, FIELD_TYPE_SIGNED_INTEGER)
 
-#define POINTER_FIELD(struct_name, field_name)                                 \
-  memset(&struct_name##__instance, 0, sizeof(struct_name));                    \
-  struct_name##__instance.field_name = (long long)-1;                          \
-  define_structure_field(FIELD_TYPE_POINTER, #struct_name, #field_name,        \
-              start_bit(&struct_name##__instance, sizeof(struct_name)),        \
-              end_bit(&struct_name##__instance, sizeof(struct_name))           \
-  )
+#define UNSIGNED_INTEGER_FIELD(struct_name, field_name) \
+  _BIT_FIELD(struct_name, field_name, FIELD_TYPE_UNSIGNED_INTEGER)
 
-#define ARRAY_FIELD(struct_name, field_name)                                          \
-  define_structure_field(FIELD_TYPE_ARRAY, #struct_name, #field_name,                 \
-    8 * PTR_OFFSET(&struct_name##__instance, &struct_name##__instance.field_name[0]), \
-              sizeof(&struct_name##__instance.field_name))
+#define FLOATING_POINT_FIELD(struct_name, field_name) \
+  _NORMAL_FIELD(struct_name, field_name, FIELD_TYPE_FLOATING_POINT)
 
-#define STRUCTURE_FIELD(struct_name, field_name)                                   \
-  define_structure_field(FIELD_TYPE_STRUCTURE, #struct_name, #field_name,          \
-    8 * PTR_OFFSET(&struct_name##__instance, &struct_name##__instance.field_name), \
-              sizeof(&struct_name##__instance.field_name))
+#define POINTER_FIELD(struct_name, field_name) \
+  _NORMAL_FIELD(struct_name, field_name, FIELD_TYPE_POINTER)
 
-#define UNION_FIELD(struct_name, field_name)                                       \
-  define_structure_field(FIELD_TYPE_STRUCTURE, #struct_name, #field_name,          \
-    8 * PTR_OFFSET(&struct_name##__instance, &struct_name##__instance.field_name), \
-              sizeof(&struct_name##__instance.field_name))
+#define ARRAY_FIELD(struct_name, field_name) \
+  _NORMAL_FIELD(struct_name, field_name, FIELD_TYPE_ARRAY)
+
+#define STRUCTURE_FIELD(struct_name, field_name) \
+  _NORMAL_FIELD(struct_name, field_name, FIELD_TYPE_STRUCTURE)
+
+#define UNION_FIELD(struct_name, field_name) \
+  _NORMAL_FIELD(struct_name, field_name, FIELD_TYPE_UNION)
   
 int get_bit(unsigned char* bytes, int bit_number) {
   unsigned char b = bytes[bit_number >> 3];
@@ -149,13 +152,9 @@ int end_bit(unsigned char* bytes, int max_bytes) {
   printf("ERROR: First set bit not found!");
   exit(1);
 }
-
-// void output_bytes(unsigned char* bytes, int num_bytes) {
-//  for (int i = 0; i < num_bytes; i++) {
-//    printf("%02x", bytes[i]);
-//  }
-//  printf("\n");
-// }
+
+// These are meant to be redefined later to actually generate code for
+// various languages.
 
 void define_structure_start(char *struct_name,
                             int size, 
@@ -172,32 +171,42 @@ void define_structure_field(int field_type,
                             char *field_name,
                             int start_bit,
                             int end_bit) {
-  printf("structure name=%s field=%s start=%d end=%d\n", 
-         struct_name, field_name, start_bit, end_bit);
+  printf("    %s=%s start=%d end=%d\n", field_type_to_string(field_type), field_name, start_bit, end_bit);
 }
+
+//
+// This is just sample code.
+// 
 
 // This could of course come from a header file.
 struct Foo {
-  unsigned int bitfield0 : 3;
+  int bitfield0 : 3;
   unsigned int bitfield1 : 1;
   int bar;
   long baz;
   long *qux;
   double boof;
+  long some_array[5];
 };
 
-// If the structure isn't typedef'd, we need to do that now.
+// If the structure isn't typedef'd, we need to do that now. This
+// obviously changed the name of the structure but many code
+// generators will want to want to strip off _t anyways...
+
 typedef struct Foo Foo_t;
 
 void main() {
   char *current_struct_name = NULL;
   DEFINE_STRUCTURE_START(Foo_t);
-  BIT_FIELD(Foo_t, bitfield0);
-  BIT_FIELD(Foo_t, bitfield1);
-  UNSIGNED_INTEGER_FIELD(Foo_t, bar);
-  UNSIGNED_INTEGER_FIELD(Foo_t, baz);
-  POINTER_FIELD(Foo_t, qux);
-  FLOATING_POINT_FIELD(Foo_t, boof);
+  {
+    SIGNED_BIT_FIELD(Foo_t, bitfield0);
+    UNSIGNED_BIT_FIELD(Foo_t, bitfield1);
+    UNSIGNED_INTEGER_FIELD(Foo_t, bar);
+    UNSIGNED_INTEGER_FIELD(Foo_t, baz);
+    POINTER_FIELD(Foo_t, qux);
+    FLOATING_POINT_FIELD(Foo_t, boof);
+    ARRAY_FIELD(Foo_t, some_array);
+  }
   DEFINE_STRUCTURE_END(Foo_t);
 
   if (current_struct_name != NULL) {
