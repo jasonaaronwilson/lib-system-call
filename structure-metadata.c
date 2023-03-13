@@ -186,10 +186,14 @@ char* rename_structure_name(char *name) {
   if (strcmp(name, "timespec_t") == 0) {
     return "timespec";
   }
+  if (strcmp(name, "stat_t") == 0) {
+    return "os-file-status";
+  }
   return name;
 }
 
 char* rename_field_name(char *struct_name, char *field_name) {
+
   if (strcmp(struct_name, "timespec_t") == 0) {
     if (strcmp(field_name, "tv_sec") == 0) {
       return "seconds";
@@ -253,6 +257,7 @@ void define_structure_start(char *struct_name,
 
 void define_structure_end(char *struct_name) {
   // This method is useful to generate code once all fields are known.
+  printf("\n\n");
   printf("($define-function (make-%s $returns pointer) (malloc %d))\n", 
          metadata.name, metadata.size);
   printf("($define-function (size-of-%s $returns uint64) %d)\n", 
@@ -323,8 +328,10 @@ struct Foo {
 typedef struct Foo Foo_t;
 
 #include <time.h>
+#include <sys/stat.h>
 
 typedef struct timespec timespec_t;
+typedef struct stat stat_t;
 
 void main() {
   char *current_struct_name = NULL;
@@ -347,6 +354,25 @@ void main() {
     UNSIGNED_INTEGER_FIELD(timespec_t, tv_nsec);
   }
   DEFINE_STRUCTURE_END(timespec_t);
+
+  DEFINE_STRUCTURE_START(stat_t);
+  {
+    UNSIGNED_INTEGER_FIELD(stat_t, st_dev);
+    UNSIGNED_INTEGER_FIELD(stat_t, st_ino);
+    UNSIGNED_INTEGER_FIELD(stat_t, st_mode);
+    UNSIGNED_INTEGER_FIELD(stat_t, st_nlink);
+    UNSIGNED_INTEGER_FIELD(stat_t, st_uid);
+    UNSIGNED_INTEGER_FIELD(stat_t, st_gid);
+    UNSIGNED_INTEGER_FIELD(stat_t, st_rdev);
+    UNSIGNED_INTEGER_FIELD(stat_t, st_size);
+    UNSIGNED_INTEGER_FIELD(stat_t, st_blksize);
+    UNSIGNED_INTEGER_FIELD(stat_t, st_blocks);
+    STRUCTURE_FIELD(stat_t, st_atim);
+    STRUCTURE_FIELD(stat_t, st_mtim);
+    STRUCTURE_FIELD(stat_t, st_ctim);
+  }
+  DEFINE_STRUCTURE_END(stat_t);
+
 
   if (current_struct_name != NULL) {
     printf("ERROR: missing DEFINE_STRUCTURE_END\n");
