@@ -227,9 +227,9 @@ char* generate_store(int start_bit, int end_bit, char* value) {
   } else if (size == 16 && ((start_bit % 16) == 0)) {
     sprintf(buffer, "($store-16 ($add ptr %d) %s)", start_bit / 8, value);
   } else if (size == 32 && ((start_bit % 32) == 0)) {
-    sprintf(buffer, "(store-32 ($add ptr %d) %s)", start_bit / 8, value);
+    sprintf(buffer, "($store-32 ($add ptr %d) %s)", start_bit / 8, value);
   } else if (size == 64 && ((start_bit % 64) == 0)) {
-    sprintf(buffer, "(store-64 ($add ptr %d) %s)", start_bit / 8, value);
+    sprintf(buffer, "($store-64 ($add ptr %d) %s)", start_bit / 8, value);
   } else {
     sprintf(buffer, "(store-bit-field ptr %d %d %s)", start_bit, end_bit, value);
   }
@@ -253,24 +253,24 @@ void define_structure_start(char *struct_name,
 
 void define_structure_end(char *struct_name) {
   // This method is useful to generate code once all fields are known.
-  printf("(define-function (make-%s $returns pointer) (malloc %d))\n", metadata.name, metadata.size);
-  printf("(define-function (free-%s (ptr pointer) $returns void) (free ptr))\n", metadata.name, metadata.size);
-  printf("(define-function (size-of-%s $returns uint64) %d)\n", metadata.name, metadata.size);
+  printf("($define-function (make-%s $returns pointer) (malloc %d))\n", metadata.name, metadata.size);
+  printf("($define-function (free-%s (ptr pointer) $returns void) (free ptr))\n", metadata.name, metadata.size);
+  printf("($define-function (size-of-%s $returns uint64) %d)\n", metadata.name, metadata.size);
   for (int i = 0; (i < metadata.num_fields); i++) {
     struct structure_field_metadata field = metadata.fields[i];
 
-    printf("(define-function (%s:load-%s (ptr pointer) $returns uint64)\n  %s)\n",
+    printf("($define-function (%s:load-%s (ptr pointer) $returns uint64)\n  %s)\n",
            metadata.name, 
            field.field_name,
            generate_unsigned_load(field.start_bit, field.end_bit));
 
-    printf("(define-function (%s:store-%s (ptr pointer) (value uint64) $returns uint64)\n  %s)\n",
+    printf("($define-function (%s:store-%s (ptr pointer) (value uint64) $returns uint64)\n  %s)\n",
            metadata.name, 
            field.field_name,
            generate_store(field.start_bit, field.end_bit, "value"));
 
     if (is_field_type_addressable(field.field_type)) {
-      printf("(define-function (%s:address-of-%s (ptr pointer) $returns uint64)\n  ($add ptr %d))\n",
+      printf("($define-function (%s:address-of-%s (ptr pointer) $returns uint64)\n  ($add ptr %d))\n",
              metadata.name, 
              field.field_name,
              field.start_bit / 8);
