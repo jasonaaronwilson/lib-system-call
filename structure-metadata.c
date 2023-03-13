@@ -303,6 +303,7 @@ typedef struct Foo Foo_t;
 
 void main() {
   char *current_struct_name = NULL;
+
   DEFINE_STRUCTURE_START(Foo_t);
   {
     SIGNED_BIT_FIELD(Foo_t, bitfield0);
@@ -319,5 +320,6 @@ void main() {
     printf("ERROR: missing DEFINE_STRUCTURE_END\n");
     exit(1);
   }
+
   exit(0);
 }
