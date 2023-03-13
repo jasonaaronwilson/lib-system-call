@@ -153,12 +153,31 @@ int end_bit(unsigned char* bytes, int max_bytes) {
   exit(1);
 }
 
+struct structure_field_metadata {
+  int field_type;
+  char* struct_name;
+  char* field_name;
+  int start_bit;
+  int end_bit;
+};
+
+struct structure_metadata {
+  char* name;
+  int size;
+  int alignment;
+  int num_fields;
+  struct structure_field_metadata fields[256];
+};
+
 // These are meant to be redefined later to actually generate code for
 // various languages.
+
+struct structure_metadata metadata;
 
 void define_structure_start(char *struct_name,
                             int size, 
                             int alignment) {
+  memset(&metadata, 0, sizeof(metadata));
   printf("structure name=%s size=%d alignment=%d\n", struct_name, size, alignment);
 }
 
@@ -172,6 +191,14 @@ void define_structure_field(int field_type,
                             int start_bit,
                             int end_bit) {
   printf("    %s=%s start=%d end=%d\n", field_type_to_string(field_type), field_name, start_bit, end_bit);
+  struct structure_field_metadata field_md = {
+    .field_type = field_type,
+    .struct_name = struct_name,
+    .field_name = field_name,
+    .start_bit = start_bit,
+    .end_bit = end_bit,
+  };
+  metadata.fields[metadata.num_fields++] = field_md;
 }
 
 //
