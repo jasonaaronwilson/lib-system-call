@@ -183,6 +183,9 @@ char* convert_structure_name(char *name) {
   if (strcmp(name, "Foo_t") == 0) {
     return "foo";
   }
+  if (strcmp(name, "timespec_t") == 0) {
+    return "timespec";
+  }
   return name;
 }
 
@@ -301,6 +304,10 @@ struct Foo {
 
 typedef struct Foo Foo_t;
 
+#include <time.h>
+
+typedef struct timespec timespec_t;
+
 void main() {
   char *current_struct_name = NULL;
 
@@ -315,6 +322,13 @@ void main() {
     ARRAY_FIELD(Foo_t, some_array);
   }
   DEFINE_STRUCTURE_END(Foo_t);
+
+  DEFINE_STRUCTURE_START(timespec_t);
+  {
+    UNSIGNED_INTEGER_FIELD(timespec_t, tv_sec);
+    UNSIGNED_INTEGER_FIELD(timespec_t, tv_nsec);
+  }
+  DEFINE_STRUCTURE_END(timespec_t);
 
   if (current_struct_name != NULL) {
     printf("ERROR: missing DEFINE_STRUCTURE_END\n");
