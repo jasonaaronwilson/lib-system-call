@@ -88,7 +88,9 @@ enum FieldType {
   
 extern char *field_type_to_string(int value);
 extern int is_field_type_addressable(int value);
-
+extern int start_bit(unsigned char* bytes, int max_bytes);
+extern int end_bit(unsigned char* bytes, int max_bytes);
+                            
 // Forward Declarations. In the future it will be possible to swap
 // these out with your own functions.
 
@@ -111,7 +113,4 @@ extern void internal_rename(char* original_structure_name,
 
 extern void clear_renames();
 
-extern int start_bit(unsigned char* bytes, int max_bytes);
-extern int end_bit(unsigned char* bytes, int max_bytes);
-                            
 #endif /* __STRUCTURE_METADATA_H__ */
