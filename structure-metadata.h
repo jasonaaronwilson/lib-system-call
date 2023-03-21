@@ -1,5 +1,7 @@
 #ifndef __STRUCTURE_METADATA_H__
 
+#include <stddef.h>
+
 enum FieldType {
   FIELD_TYPE_SIGNED_BIT_FIELD,
   FIELD_TYPE_UNSIGNED_BIT_FIELD,
