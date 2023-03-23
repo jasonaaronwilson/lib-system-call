@@ -1,9 +1,10 @@
 # README
 
-This directory contains two related projects:
+This directory contains three related projects:
 
 1. A non "libc" minimal startup replacement
 2. A non "libc" syscall library
+3. A structure/union "decoder"
 
 #1 actually depends on #2 and this is OK from a binrary size
 perspective because #2 is a trivial amount of code on Linux and allows
@@ -27,3 +28,23 @@ a minimal binary that uses the default dynamic linking:
 "demo.skinny" so there isn't much to gain from a binary size
 perspective but obviously not depending on any shared libraries is a
 benefit in some circumstances.
+
+## A Structure/Union Decoder
+
+In order to properly interact with the Linux kernel or other C
+libraries, being able to interact with C structures and unions is
+essential.
+
+Instead of directly parsing C structure or union definitions and
+recreating the logic a C compiler uses to layout these objects in
+memory, we can use a C program to determine the the actual memory
+layout (and size) of fields and use that to generate code in a foriegn
+language (of course this is probably architecture dependent). Since we
+are likely to want to heavily edit the names of both these structures
+and fields anyways, this isn't actually that terrible.
+
+This code can be reused though it might be simpler to simply parse the
+output which outputs "$define-blob".
+
+
+

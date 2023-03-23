@@ -136,12 +136,63 @@ extern void define_structure_start(char *struct_name,
   }
 }
 
+extern void define_structure_field(int field_type,
+                                   char *struct_name,
+                                   char *field_name,
+                                   int start_bit,
+                                   int end_bit) {
+  if (0) {
+    printf("    %s=%s start=%d end=%d\n", field_type_to_string(field_type), field_name, start_bit, end_bit);
+  }
+  struct structure_field_metadata field_md = {
+    .field_type = field_type,
+    .field_name = rename_field_name(struct_name, field_name),
+    .start_bit = start_bit,
+    .end_bit = end_bit,
+  };
+  metadata.fields[metadata.num_fields++] = field_md;
+}
 
 // Delay generation until we know all the fields. This will allow us
 // to create "print" routines for an entire structure based on it's
 // fields.
 
+char* field_type_to_blob_type_string(int value) {
+  switch (value) {
+  case FIELD_TYPE_SIGNED_BIT_FIELD: return "signed";
+  case FIELD_TYPE_UNSIGNED_BIT_FIELD: return "unsigned";
+  case FIELD_TYPE_SIGNED_INTEGER: return "signed";
+  case FIELD_TYPE_UNSIGNED_INTEGER: return "unsigned";
+  case FIELD_TYPE_FLOATING_POINT: return "float";
+  case FIELD_TYPE_POINTER: return "pointer";
+  case FIELD_TYPE_ARRAY: return "blob";
+  case FIELD_TYPE_STRUCTURE: return "blob";
+  case FIELD_TYPE_UNION: return "blob";
+  }
+  printf("ERROR: field type out of range.\n");
+  exit(1);
+}
+
 extern void define_structure_end(char *struct_name) {
+  printf(";;; ======================================================================\n");
+  printf(";;; %s (Linux name %s)\n", metadata.name, metadata.original_name);
+  printf(";;; ======================================================================\n\n");
+
+  printf("($define-blob (%s bit-size: %d)", metadata.name, metadata.size);
+
+  for (int i = 0; (i < metadata.num_fields); i++) {
+    struct structure_field_metadata field = metadata.fields[i];
+    printf("\n");
+    printf("  (%s field-type: %s bit-offset: %d bit-size: %d)",
+           field.field_name,
+           field_type_to_blob_type_string(field.field_type),
+           field.start_bit,
+           (field.end_bit - field.start_bit));
+  }
+  printf(")\n\n");
+}
+
+extern void OLD_define_structure_end(char *struct_name) {
   printf("\n\n");
   printf(";;; ======================================================================\n");
   printf(";;; %s (Linux name %s)\n", metadata.name, metadata.original_name);
@@ -177,21 +228,4 @@ extern void define_structure_end(char *struct_name) {
   }
 
   // TODO(jawilson): STRUCTURE-NAME:clear-FIELD-NAME
-}
-
-extern void define_structure_field(int field_type,
-                                   char *struct_name,
-                                   char *field_name,
-                                   int start_bit,
-                                   int end_bit) {
-  if (0) {
-    printf("    %s=%s start=%d end=%d\n", field_type_to_string(field_type), field_name, start_bit, end_bit);
-  }
-  struct structure_field_metadata field_md = {
-    .field_type = field_type,
-    .field_name = rename_field_name(struct_name, field_name),
-    .start_bit = start_bit,
-    .end_bit = end_bit,
-  };
-  metadata.fields[metadata.num_fields++] = field_md;
 }
